@@ -1,0 +1,7 @@
+FROM redis:latest
+
+WORKDIR /
+
+ADD gb.sh .
+
+CMD bash -c "chmod +x ./gb.sh && ./gb.sh"

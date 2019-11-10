@@ -1,0 +1,21 @@
+image: docker:latest
+services:
+  - docker:dind
+
+stages:
+  - test
+
+variables:
+  APP_IMAGE_TAG_PROD: $REPO_PREFIX:$CI_COMMIT_SHA  # docker镜像的tag为仓库名:本次commit的hash
+
+test:
+  stage: test
+  tags:
+    - test-ci
+  script:
+    - docker login -u $REPO_USER -p $REPO_PWD  # 登陆docker hub
+    - docker build -t $APP_IMAGE_TAG_LATEST -f $APP_DOCKERFILE .  # 制作go镜像
+    - docker tag $APP_IMAGE_TAG_LATEST $APP_IMAGE_TAG_PROD  # 给go镜像打tag
+    - docker push $APP_IMAGE_TAG_PROD  # go镜像push到docker hub
+    - docker build -t $REDIS_IMAGE_TAG -f $REDIS_DOCKERFILE .  # 制作redis镜像
+    - docker run --rm --env APP_NAME=$APP_NAME --env APP_IMAGE_TAG_PROD=$APP_IMAGE_TAG_PROD --env REDIS_HOST=$REDIS_HOST $REDIS_IMAGE_TAG  # 在redis容器里执行脚本把go镜像的tag和时间戳存到redis
